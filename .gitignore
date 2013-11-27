@@ -15,7 +15,6 @@ doc/
 
 # Local configuration file (sdk path, etc)
 local.properties
-project.properties
 
 # Eclipse project files
 .classpath
