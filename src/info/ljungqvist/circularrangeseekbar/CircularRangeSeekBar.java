@@ -471,11 +471,28 @@ public class CircularRangeSeekBar extends View {
             invalidate();
             return true;
         }
-        
+
+        /**
+         * Gets the status of the circles behaviour when progress1 = progress2.
+         *
+         * @return status
+         * true if the full circle is drawn.
+         */
         public boolean getCircleOnSame() {
         	return CIRCLE_ON_SAME;
         }
-        
+
+
+        /**
+         * Set the status of the circles behaviour when progress1 = progress2.
+         * <p>
+         * When progress1 = progress2 it can either be interpreted as the whole
+         * circle being marked or as nothing being marked. This method sets
+         * this behaviour.
+         *
+         * @param status
+         * true if the full circle should be drawn.
+         */
         public void setCircleOnSame(final boolean circleOnSame) {
         	CIRCLE_ON_SAME = circleOnSame;
         	invalidate();
