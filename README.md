@@ -29,7 +29,9 @@ public class MainActivity extends Activity {
         CircularRangeSeekBar crsb = new CircularRangeSeekBar(this);
         crsb.setMaxProgress(20);
         crsb.setCircleOnSame(false);
-        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        LayoutParams lp = new LayoutParams(
+        		LayoutParams.MATCH_PARENT, 
+        		LayoutParams.MATCH_PARENT);
         crsb.setLayoutParams(lp);
 
         setContentView(crsb);
