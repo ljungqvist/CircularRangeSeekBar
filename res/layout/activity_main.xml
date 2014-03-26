@@ -12,11 +12,11 @@
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"/>
 	    
-	    <info.ljungqvist.android.widget.RangeSeekBar
+	    <info.ljungqvist.android.widget.CircularSeekBar
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"/>
 	    
-	    <info.ljungqvist.android.widget.CircularSeekBar
+	    <info.ljungqvist.android.widget.RangeSeekBar
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"/>
 	    
