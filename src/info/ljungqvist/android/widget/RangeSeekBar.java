@@ -16,8 +16,14 @@
 
 package info.ljungqvist.android.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.widget.SeekBar;
 
 public class RangeSeekBar extends SeekBar {
@@ -25,6 +31,8 @@ public class RangeSeekBar extends SeekBar {
 	public interface OnRangeSeekBarChangeListener extends OnSeekBarChangeListener {
 		void onSecondaryProgressChanged(RangeSeekBar seekBar, int progress, boolean fromUser);
 	}
+	
+	private Drawable thumb = null;
 	
 	private OnRangeSeekBarChangeListener onRangeSeekBarChangeListener;
 
@@ -36,6 +44,7 @@ public class RangeSeekBar extends SeekBar {
 	}
 	public RangeSeekBar(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+        Log.d("test", "hej hej hej");
 	}
 	
 	public void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekBarChangeListener) {
@@ -48,5 +57,32 @@ public class RangeSeekBar extends SeekBar {
 		super.onSizeChanged(w, h, oldw, oldh);
 		//updateThumbPos(w, h);
 	}
+
+	@Override
+    public void setThumb(Drawable thumb) {
+        super.setThumb(thumb);
+        //this.thumb = getThumb().getConstantState().newDrawable();
+    }
+	
+
+    @SuppressLint("NewApi")
+	@Override
+    protected synchronized void onDraw(Canvas canvas) {
+		if (null == thumb) {
+			thumb = getThumb().getConstantState().newDrawable();
+			thumb.setBounds(getThumb().getBounds());
+		}
+        if (thumb != null) {
+            canvas.save();
+            // Translate the padding. For the x, we need to allow the thumb to
+            // draw in its extra space
+            canvas.translate(0, getPaddingTop());
+            thumb.draw(canvas);
+            canvas.restore();
+            Log.d("test", "not NULL" + getPaddingLeft());
+        } else 
+            Log.d("test", " NULL");
+        super.onDraw(canvas);
+    }
 
 }
