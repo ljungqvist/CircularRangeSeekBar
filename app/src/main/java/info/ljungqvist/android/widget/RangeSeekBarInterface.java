@@ -19,13 +19,12 @@ import android.widget.SeekBar;
  * limitations under the License.
  */
 public interface RangeSeekBarInterface {
-    interface OnRangeSeekBarChangeListener extends SeekBar.OnSeekBarChangeListener {
+    public interface OnRangeSeekBarChangeListener extends SeekBar.OnSeekBarChangeListener {
         void onProgress2Changed(RangeSeekBar seekBar, int progress, boolean fromUser);
     }
-    int getProgress2();
-    void incrementProgress2By(int diff);
-    void setProgress2(int progress2);
-    Drawable getThumb2();
-    int getThumb2Offset();
-    void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekBarChangeListener);
+    public int getProgress2();
+    public void incrementProgress2By(int diff);
+    public void setProgress2(int progress2);
+    public Drawable getThumb2();
+    public void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekBarChangeListener);
 }
