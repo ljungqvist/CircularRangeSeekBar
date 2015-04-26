@@ -1,10 +1,5 @@
-package info.ljungqvist.android.widget;
-
-import android.graphics.drawable.Drawable;
-import android.widget.SeekBar;
-
 /*
- * Copyright 2013-2014 Petter Ljungqvist (petter@ljungqvist.info)
+ * Copyright 2013-2015 Petter Ljungqvist (petter@ljungqvist.info)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +13,13 @@ import android.widget.SeekBar;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package info.ljungqvist.android.widget;
+
+import android.graphics.drawable.Drawable;
+import android.widget.SeekBar;
+
+
 public interface RangeSeekBarInterface {
     public interface OnRangeSeekBarChangeListener extends SeekBar.OnSeekBarChangeListener {
         void onProgress2Changed(RangeSeekBar seekBar, int progress, boolean fromUser);

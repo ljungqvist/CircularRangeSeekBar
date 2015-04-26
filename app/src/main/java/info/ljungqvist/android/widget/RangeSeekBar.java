@@ -1,14 +1,5 @@
-package info.ljungqvist.android.widget;
-
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
-import android.util.AttributeSet;
-import android.util.Log;
-
 /*
- * Copyright 2013-2014 Petter Ljungqvist (petter@ljungqvist.info)
+ * Copyright 2013-2015 Petter Ljungqvist (petter@ljungqvist.info)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +13,17 @@ import android.util.Log;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package info.ljungqvist.android.widget;
+
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.util.AttributeSet;
+import android.util.Log;
+
+
 public class RangeSeekBar extends ExposingSeekBar implements RangeSeekBarInterface {
     private static final int MAX_LEVEL = 10000;
     private static final int TIMEOUT_SEND_ACCESSIBILITY_EVENT = 200;

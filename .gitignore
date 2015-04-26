@@ -25,6 +25,9 @@ proguard/
 .idea/
 .gradle
 build/
+gradle/
+gradlew
+gradlew.bat
 
 # Temp
 *~
