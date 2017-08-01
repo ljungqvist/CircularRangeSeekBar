@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 Petter Ljungqvist (petter@ljungqvist.info)
+ * Copyright 2013-2017 Petter Ljungqvist (petter@ljungqvist.info)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package info.ljungqvist.android.activity;
+package info.ljungqvist.android.activity
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.app.Activity
+import android.os.Bundle
 
-import info.ljungqvist.android.widget.R;
+import info.ljungqvist.android.widget.R
 
 
-public class TestActivity extends Activity {
+class TestActivity : Activity() {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_test);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_test)
     }
 }
