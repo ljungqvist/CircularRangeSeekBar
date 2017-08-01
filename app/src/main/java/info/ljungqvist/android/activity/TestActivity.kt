@@ -18,11 +18,17 @@ package info.ljungqvist.android.activity
 
 import android.app.Activity
 import android.os.Bundle
+import info.ljungqvist.android.widget.BuildConfig
 
 import info.ljungqvist.android.widget.R
+import org.slf4j.impl.HandroidLoggerAdapter
 
 
 class TestActivity : Activity() {
+
+    init {
+        HandroidLoggerAdapter.DEBUG = BuildConfig.DEBUG;
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

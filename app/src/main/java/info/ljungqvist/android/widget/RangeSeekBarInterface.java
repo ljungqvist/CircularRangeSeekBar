@@ -21,12 +21,17 @@ import android.widget.SeekBar;
 
 
 public interface RangeSeekBarInterface {
-    public interface OnRangeSeekBarChangeListener extends SeekBar.OnSeekBarChangeListener {
-        void onProgress2Changed(RangeSeekBar seekBar, int progress, boolean fromUser);
+    interface OnRangeSeekBarChangeListener extends SeekBar.OnSeekBarChangeListener {
+        void onProgress2Changed(RangeSeekBarInterface seekBar, int progress, boolean fromUser);
     }
-    public int getProgress2();
-    public void incrementProgress2By(int diff);
-    public void setProgress2(int progress2);
-    public Drawable getThumb2();
-    public void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekBarChangeListener);
+
+    int getProgress2();
+
+    void incrementProgress2By(int diff);
+
+    void setProgress2(int progress2);
+
+    Drawable getThumb2();
+
+    void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekBarChangeListener);
 }
