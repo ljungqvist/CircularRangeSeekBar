@@ -1,4 +1,4 @@
-CircularRangeSeekBar
+CircularRangeSeekBar \< !!! NOT WORKING/READY YET !!! \>
 ====================
 
 Three range and circular seek bar classes, all extending [android.widget.SeekBar](http://developer.android.com/reference/android/widget/SeekBar.html).
