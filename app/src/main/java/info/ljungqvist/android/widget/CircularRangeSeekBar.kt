@@ -17,85 +17,55 @@
 package info.ljungqvist.android.widget
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.widget.SeekBar
+import mu.KLogging
 
 class CircularRangeSeekBar : View {
 
-    private var mContext: Context? = null                // The context
-    /**
-     * Gets the seek bar change listener.
+    var seekBarChangeListener: OnSeekChangeListener? = null
 
-     * @return the seek bar change listener
-     */
-    /**
-     * Sets the seek bar change listener.
-
-     * @param listener
-     * * the new seek bar change listener
-     */
-    var seekBarChangeListener: OnSeekChangeListener? = null // The listener to listen for changes
-    private var circleColor: Paint? = null                // The color of the progress ring
-    private var circleRing: Paint? = null                // The progress circle ring background
+    // The color of the progress ring
+    private var circleColor: Paint = Paint()
+            .apply {
+                color = Color.parseColor("#ff33b5e5")
+                isAntiAlias = true
+                strokeWidth = barWidth.toFloat()
+                style = Paint.Style.STROKE
+            }
+    // The progress circle ring background
+    private var circleRing: Paint = Paint()
+            .apply {
+                color = Color.GRAY
+                isAntiAlias = true
+                strokeWidth = barWidth.toFloat()
+                style = Paint.Style.STROKE
+            }
     private var angle1 = 0                    // The angle of progress 1
     private var angle2 = 0                    // The angle of progress 2
     private val startAngle = 270            // The start angle (12 O'clock
-    /**
-     * Gets the bar width.
 
-     * @return the bar width
-     */
-    /**
-     * Sets the bar width.
-
-     * @param barWidth
-     * * the new bar width
-     */
     var barWidth = 5                // The width of the progress ring
-    /**
-     * Gets the max progress.
 
-     * @return the max progress
-     */
-    /**
-     * Sets the max progress.
-
-     * @param maxProgress
-     * * the new max progress
-     */
     var maxProgress = 100            // The maximum progress amount
-    /**
-     * Gets the progress.
 
-     * @return the progress
-     */
     var progress1: Int = 0
         private set                    // The current progress
     var progress2: Int = 0
         private set                    // The current progress
-    /**
-     * Gets the radius.
 
-     * @return the raduis
-     */
-    var radius: Float = 0.toFloat()
+    var radius: Float = 0f
         private set                    // The radius of the circle
-    private var cx: Float = 0.toFloat()                        // The circle's centre X coordinate
-    private var cy: Float = 0.toFloat()                        // The circle's centre Y coordinate
-    private var dx: Float = 0.toFloat()    // The X coordinate for the top left corner of the marking drawable
-    private var dy: Float = 0.toFloat()    // The Y coordinate for the top left corner of the marking drawable
-    private var markPointX1: Float = 0.toFloat()    // The X coordinate for the current position of the marker
-    private var markPointY1: Float = 0.toFloat()    // The Y coordinate for the current position of the marker
-    private var markPointX2: Float = 0.toFloat()    // The X coordinate for the current position of the marker
-    private var markPointY2: Float = 0.toFloat()    // The Y coordinate for the current position of the marker
+    private var cx: Float = 0f                        // The circle's centre X coordinate
+    private var cy: Float = 0f                        // The circle's centre Y coordinate
+    private var dx: Float = 0f    // The X coordinate for the top left corner of the marking drawable
+    private var dy: Float = 0f    // The Y coordinate for the top left corner of the marking drawable
+    private var markPointX1: Float = 0f    // The X coordinate for the current position of the marker
+    private var markPointY1: Float = 0f    // The Y coordinate for the current position of the marker
+    private var markPointX2: Float = 0f    // The X coordinate for the current position of the marker
+    private var markPointY2: Float = 0f    // The Y coordinate for the current position of the marker
     private var progressMark: Bitmap? = null        // The progress mark when the view isn't being progress modified
     private var progressMarkPressed: Bitmap? = null    // The progress mark when the view is being progress modified
     private var IS_PRESSED1 = false    // The flag to see if view is pressed
@@ -111,8 +81,8 @@ class CircularRangeSeekBar : View {
     private val rect = RectF()        // The rectangle containing our circles and arcs
 
     init {
-        seekBarChangeListener = object : OnSeekChangeListener {
-            override fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean) {}
+        seekBarChangeListener = OnSeekChangeListener { view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean ->
+            logger.debug { "test" }
         }
 
         circleColor = Paint()
@@ -131,54 +101,23 @@ class CircularRangeSeekBar : View {
         circleRing!!.style = Paint.Style.STROKE
     }
 
-    /**
-     * Instantiates a new circular seek bar.
-
-     * @param context
-     * * the context
-     * *
-     * @param attrs
-     * * the attrs
-     * *
-     * @param defStyle
-     * * the def style
-     */
-    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle) {
-        mContext = context
-        initDrawable()
-    }
-
-    /**
-     * Instantiates a new circular seek bar.
-
-     * @param context
-     * * the context
-     * *
-     * @param attrs
-     * * the attrs
-     */
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        mContext = context
-        initDrawable()
-    }
-
-    /**
-     * Instantiates a new circular seek bar.
-
-     * @param context
-     * * the context
-     */
     constructor(context: Context) : super(context) {
-        mContext = context
         initDrawable()
     }
+
+    @JvmOverloads
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int = 0, defStyleRes: Int = 0)
+            : super(context, attrs, defStyle, defStyleRes) {
+        initDrawable()
+    }
+
 
     /**
      * Inits the drawable.
      */
     fun initDrawable() {
-        progressMark = BitmapFactory.decodeResource(mContext!!.resources, R.drawable.scrubber_control_normal_holo)
-        progressMarkPressed = BitmapFactory.decodeResource(mContext!!.resources,
+        progressMark = BitmapFactory.decodeResource(context.resources, R.drawable.scrubber_control_normal_holo)
+        progressMarkPressed = BitmapFactory.decodeResource(context.resources,
                 R.drawable.scrubber_control_pressed_holo)
         dx = Math.max(progressMark!!.width, progressMarkPressed!!.width).toFloat() / 2f
         dy = Math.max(progressMark!!.height, progressMarkPressed!!.height).toFloat() / 2f
@@ -268,8 +207,14 @@ class CircularRangeSeekBar : View {
          * @param progress2
          * * the new progress2
          */
-        fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean)
+        fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean): Unit
     }
+
+    fun OnSeekChangeListener(listener: (CircularRangeSeekBar, Int, Int, Boolean) -> Unit): OnSeekChangeListener =
+            object : OnSeekChangeListener {
+                override fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean) =
+                        listener(view, progress1, progress2, fromUser)
+            }
 
     /**
      * Gets maximum margin.
@@ -392,4 +337,6 @@ class CircularRangeSeekBar : View {
         invalidate()
         return true
     }
+
+    companion object : KLogging()
 }
