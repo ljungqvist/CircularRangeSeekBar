@@ -16,30 +16,25 @@
 
 package info.ljungqvist.android.widget
 
-import android.content.Context
-import android.util.AttributeSet
-import android.view.View
-import mu.KLogging
+import android.view.ViewGroup
+import android.view.ViewParent
+import android.widget.AbsSeekBar
 
 
-class RangeSeekBar @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0, defStyleRes: Int = 0)
-    : View(context, attrs, defStyleAttr, defStyleRes) {
-
-    init {
-
-
-
-        val a = context.obtainStyledAttributes(
-                attrs, R.styleable.RangeSeekBar, defStyleAttr, defStyleRes)
-
-        val thumb = a.getDrawable(R.styleable.RangeSeekBar_android_thumb)
-        logger.debug { "_DEBUG_PETTER: $thumb" }
-
-        a.recycle()
-
-
+internal fun AbsSeekBar.isInScrollingContainer(): Boolean {
+    var p: ViewParent? = parent
+    while (p != null && p is ViewGroup) {
+        if (p.shouldDelayChildPressedState()) {
+            return true
+        }
+        p = p.parent
     }
+    return false
+}
 
-    companion object : KLogging()
-
+internal fun AbsSeekBar.constrain(value: Int, min: Int, max: Int): Int = when {
+    min > max -> throw IllegalArgumentException("'min' must not be grater than 'max' (min=$min > max=$max)")
+    value < min -> min
+    value > max -> max
+    else -> value
 }
