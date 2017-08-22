@@ -4,7 +4,7 @@ apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.0'
+    buildToolsVersion '26.0.1'
 
     defaultConfig {
         applicationId "info.ljungqvist.android.widget"
@@ -27,6 +27,6 @@ dependencies {
     compile "com.android.support:cardview-v7:$supportLibVersion"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    compile 'io.github.microutils:kotlin-logging:1.4.4'
+    compile 'io.github.microutils:kotlin-logging:1.4.6'
     compile 'sk.baka.slf4j:slf4j-handroid:1.7.25'
 }

@@ -6,5 +6,6 @@
     <string name="circular_seek_bar">info.ljungqvist.android.widget.CircularSeekBar</string>
     <string name="range_seek_bar">info.ljungqvist.android.widget.RangeSeekBar</string>
     <string name="circular_range_seek_bar">info.ljungqvist.android.widget.CircularRangeSeekBar</string>
+    <string name="legacy_circular_range_seek_bar">info.ljungqvist.android.widget.LegacyCircularRangeSeekBar</string>
 
 </resources>
