@@ -19,8 +19,10 @@ package info.ljungqvist.android.widget
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.*
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Build
+import android.support.v4.graphics.drawable.DrawableCompat
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -79,6 +81,17 @@ class CircularRangeSeekBar : View {
      * View's setAngle() method, or externally by a user.*/
     //private boolean CALLED_FROM_ANGLE = false;
     private val rect = RectF()        // The rectangle containing our circles and arcs
+
+    private val ripple: Drawable? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                RippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
+                        .also {
+                            background = it
+                        }
+            } else {
+                null
+            }
+
 
     init {
         seekBarChangeListener = OnSeekChangeListener { view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean ->
@@ -298,13 +311,13 @@ class CircularRangeSeekBar : View {
 //                    ?.setColor(ColorStateList.valueOf(Color.RED))
 //        }
 
-
         if (event.action == MotionEvent.ACTION_DOWN) {
             val p_ = p - center
             val r_sq = (p_ * p_).sum()
             val r_min = radius - 2f * maxMargin
             val r_max = radius + 2f * maxMargin
             if (r_sq >= r_min * r_min && r_sq <= r_max * r_max) {
+                isPressed = true
                 isPressed1 = p.squareDistance(markPoint1) < p.squareDistance(markPoint2)
                 isPressed2 = !isPressed1
                 parent.requestDisallowInterceptTouchEvent(true)
@@ -313,10 +326,10 @@ class CircularRangeSeekBar : View {
         if (isPressed1 || isPressed2) {
             var ang: Double
             if (p.y == center.y) {
-                if (p.x > center.x)
-                    ang = Math.PI / 2.0
+                ang = if (p.x > center.x)
+                    Math.PI / 2.0
                 else
-                    ang = Math.PI * 3.0 / 2.0
+                    Math.PI * 3.0 / 2.0
             } else {
                 ang = Math.atan(((p.x - center.x) / (center.y - p.y)).toDouble())
                 if (ang < 0) ang += Math.PI
@@ -330,15 +343,26 @@ class CircularRangeSeekBar : View {
                     if (isPressed1) progress else progress1,
                     if (isPressed2) progress else progress2,
                     true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ripple?.let { rip ->
+                    (if (isPressed1) markPoint1 else markPoint2)
+                            .also { mark -> drawableHotspotChanged(mark.x, mark.y) }
+                            .let(FloatPoint::toIntPoint)
+                            .let { mark ->
+                                DrawableCompat.setHotspotBounds(rip, mark.x - 50, mark.y - 50, mark.x + 50, mark.y + 50)
+                            }
+                }
+            }
         }
         if (event.action == MotionEvent.ACTION_UP) {
+            isPressed = false
             //getParent().requestDisallowInterceptTouchEvent(false);
             isPressed1 = false
             isPressed2 = false
         }
 
         invalidate()
-        return super.onTouchEvent(event)
+        return true
     }
 
     companion object : KLogging()
