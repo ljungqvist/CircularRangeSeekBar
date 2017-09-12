@@ -17,15 +17,21 @@
 package info.ljungqvist.android.widget
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.*
+import android.graphics.drawable.RippleDrawable
+import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import info.ljungqvist.android.widget.util.FloatPoint
 import mu.KLogging
 
 class CircularRangeSeekBar : View {
 
     var seekBarChangeListener: OnSeekChangeListener? = null
+
+    var barWidth = 5                // The width of the progress ring
 
     // The color of the progress ring
     private var circleColor: Paint = Paint()
@@ -47,8 +53,6 @@ class CircularRangeSeekBar : View {
     private var angle2 = 0                    // The angle of progress 2
     private val startAngle = 270            // The start angle (12 O'clock
 
-    var barWidth = 5                // The width of the progress ring
-
     var maxProgress = 100            // The maximum progress amount
 
     var progress1: Int = 0
@@ -58,18 +62,14 @@ class CircularRangeSeekBar : View {
 
     var radius: Float = 0f
         private set                    // The radius of the circle
-    private var cx: Float = 0f                        // The circle's centre X coordinate
-    private var cy: Float = 0f                        // The circle's centre Y coordinate
-    private var dx: Float = 0f    // The X coordinate for the top left corner of the marking drawable
-    private var dy: Float = 0f    // The Y coordinate for the top left corner of the marking drawable
-    private var markPointX1: Float = 0f    // The X coordinate for the current position of the marker
-    private var markPointY1: Float = 0f    // The Y coordinate for the current position of the marker
-    private var markPointX2: Float = 0f    // The X coordinate for the current position of the marker
-    private var markPointY2: Float = 0f    // The Y coordinate for the current position of the marker
+    private var center: FloatPoint = FloatPoint(0f, 0f) // The circle's centre
+    private var d: FloatPoint = FloatPoint(0f, 0f) // coordinates for the top left corner of the marking drawable
+    private var markPoint1: FloatPoint = FloatPoint(0f, 0f) // coordinates for the current position of marker 1
+    private var markPoint2: FloatPoint = FloatPoint(0f, 0f) // coordinates for the current position of marker 2
     private var progressMark: Bitmap? = null        // The progress mark when the view isn't being progress modified
     private var progressMarkPressed: Bitmap? = null    // The progress mark when the view is being progress modified
-    private var IS_PRESSED1 = false    // The flag to see if view is pressed
-    private var IS_PRESSED2 = false    // The flag to see if view is pressed
+    private var isPressed1 = false    // The flag to see if view is pressed
+    private var isPressed2 = false    // The flag to see if view is pressed
     var circleOnSame = false
         set(circleOnSame) {
             field = circleOnSame
@@ -82,23 +82,8 @@ class CircularRangeSeekBar : View {
 
     init {
         seekBarChangeListener = OnSeekChangeListener { view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean ->
-            logger.debug { "test" }
+            logger.debug { "p1: $progress1, p2: $progress2" }
         }
-
-        circleColor = Paint()
-        circleRing = Paint()
-
-        circleColor!!.color = Color.parseColor("#ff33b5e5") // Set default                                               // black
-        circleRing!!.color = Color.GRAY// Set default background color to Gray
-
-        circleColor!!.isAntiAlias = true
-        circleRing!!.isAntiAlias = true
-
-        circleColor!!.strokeWidth = barWidth.toFloat()
-        circleRing!!.strokeWidth = barWidth.toFloat()
-
-        circleColor!!.style = Paint.Style.STROKE
-        circleRing!!.style = Paint.Style.STROKE
     }
 
     constructor(context: Context) : super(context) {
@@ -116,11 +101,17 @@ class CircularRangeSeekBar : View {
      * Inits the drawable.
      */
     fun initDrawable() {
-        progressMark = BitmapFactory.decodeResource(context.resources, R.drawable.scrubber_control_normal_holo)
-        progressMarkPressed = BitmapFactory.decodeResource(context.resources,
-                R.drawable.scrubber_control_pressed_holo)
-        dx = Math.max(progressMark!!.width, progressMarkPressed!!.width).toFloat() / 2f
-        dy = Math.max(progressMark!!.height, progressMarkPressed!!.height).toFloat() / 2f
+        Pair(
+                BitmapFactory.decodeResource(context.resources, R.drawable.scrubber_control_normal_holo),
+                BitmapFactory.decodeResource(context.resources, R.drawable.scrubber_control_pressed_holo)
+        ).let { (mark, markPressed) ->
+            progressMark = mark
+            progressMarkPressed = markPressed
+            d = FloatPoint(
+                    Math.max(mark.width, markPressed.width).toFloat() / 2f,
+                    Math.max(mark.height, markPressed.height).toFloat() / 2f
+            )
+        }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -142,24 +133,25 @@ class CircularRangeSeekBar : View {
             height = heightSize
         }
 
-        val size = Math.min(width - (2f * dx).toInt(), height - (2f * dy).toInt()) // Choose the smaller
-        val h = size + (2f * dy).toInt()
-        val w = size + (2f * dx).toInt()
+        val diameter = Math.min(width - (2f * d.x).toInt(), height - (2f * d.y).toInt()) // Choose the smaller
+        val size = (d * 2f).toIntPoint() + diameter
         //MUST CALL THIS
-        setMeasuredDimension(w, h)
+        setMeasuredDimension(size.x, size.y)
 
 
+        center = (size / 2).toFloatPoint()
+        radius = diameter.toFloat() / 2f // Radius of the outer circle
 
-        cx = (w / 2).toFloat() // Center X for circle
-        cy = (h / 2).toFloat() // Center Y for circle
-        radius = size.toFloat() / 2f // Radius of the outer circle
+        markPoint1 = center + FloatPoint(
+                radius * Math.sin(Math.toRadians(angle1.toDouble())).toFloat(),
+                -radius * Math.cos(Math.toRadians(angle1.toDouble())).toFloat()
+        )
+        markPoint2 = center + FloatPoint(
+                radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat(),
+                -radius * Math.cos(Math.toRadians(angle2.toDouble())).toFloat()
+        )
 
-        markPointX1 = cx + radius * Math.sin(Math.toRadians(angle1.toDouble())).toFloat()
-        markPointY1 = cy - radius * Math.cos(Math.toRadians(angle1.toDouble())).toFloat()
-        markPointX2 = cx + radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat()
-        markPointY2 = cy - radius * Math.cos(Math.toRadians(angle2.toDouble())).toFloat()
-
-        rect.set(cx - radius, cy - radius, cx + radius, cy + radius) // assign size to rect
+        rect.set(center.x - radius, center.y - radius, center.x + radius, center.y + radius) // assign size to rect
     }
 
     /*
@@ -168,18 +160,18 @@ class CircularRangeSeekBar : View {
      * @see android.view.View#onDraw(android.graphics.Canvas)
      */
     override fun onDraw(canvas: Canvas) {
-        canvas.drawCircle(cx, cy, radius, circleRing!!)
+        canvas.drawCircle(center.x, center.y, radius, circleRing)
         var ang2 = angle2 - angle1
         if (ang2 < 0) ang2 += 360
         if (circleOnSame && progress1 == progress2)
             ang2 = 360
-        canvas.drawArc(rect, (startAngle + angle1).toFloat(), ang2.toFloat(), false, circleColor!!)
+        canvas.drawArc(rect, (startAngle + angle1).toFloat(), ang2.toFloat(), false, circleColor)
         canvas.drawBitmap(
-                if (IS_PRESSED1) progressMarkPressed else progressMark,
-                markPointX1 - dx, markPointY1 - dy, null)
+                if (isPressed1) progressMarkPressed else progressMark,
+                markPoint1.x - d.x, markPoint1.y - d.y, null)
         canvas.drawBitmap(
-                if (IS_PRESSED2) progressMarkPressed else progressMark,
-                markPointX2 - dx, markPointY2 - dy, null)
+                if (isPressed2) progressMarkPressed else progressMark,
+                markPoint2.x - d.x, markPoint2.y - d.y, null)
         super.onDraw(canvas)
     }
 
@@ -207,7 +199,7 @@ class CircularRangeSeekBar : View {
          * @param progress2
          * * the new progress2
          */
-        fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean): Unit
+        fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean)
     }
 
     fun OnSeekChangeListener(listener: (CircularRangeSeekBar, Int, Int, Boolean) -> Unit): OnSeekChangeListener =
@@ -222,7 +214,7 @@ class CircularRangeSeekBar : View {
      * @return the maximum margin
      */
     val maxMargin: Float
-        get() = Math.max(dx, dy)
+        get() = d.max()
 
     /**
      * Sets the progress.
@@ -242,8 +234,10 @@ class CircularRangeSeekBar : View {
             else
                 this.progress1 = progress1
             angle1 = 360 * this.progress1 / maxProgress
-            markPointX1 = cx + radius * Math.sin(Math.toRadians(angle1.toDouble())).toFloat()
-            markPointY1 = cy - radius * Math.cos(Math.toRadians(angle1.toDouble())).toFloat()
+            markPoint1 = center + FloatPoint(
+                    radius * Math.sin(Math.toRadians(angle1.toDouble())).toFloat(),
+                    -radius * Math.cos(Math.toRadians(angle1.toDouble())).toFloat()
+            )
             update = true
         }
         if (this.progress2 != progress2) {
@@ -254,16 +248,18 @@ class CircularRangeSeekBar : View {
             else
                 this.progress2 = progress2
             angle2 = 360 * this.progress2 / maxProgress
-            markPointX2 = cx + radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat()
-            markPointY2 = cy - radius * Math.cos(Math.toRadians(angle2.toDouble())).toFloat()
+            markPoint2 = center + FloatPoint(
+                    radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat(),
+                    -radius * Math.cos(Math.toRadians(angle2.toDouble())).toFloat()
+            )
             update = true
         }
         if (update)
-            seekBarChangeListener!!.onProgressChange(this, this.progress1, this.progress2, fromUser)
+            seekBarChangeListener?.onProgressChange(this, this.progress1, this.progress2, fromUser)
     }
 
     fun setProgress(progress1: Int, progress2: Int) {
-        setProgressInternal(progress1, progress2, true)
+        setProgressInternal(progress1, progress2, false)
         invalidate()
     }
 
@@ -274,7 +270,7 @@ class CircularRangeSeekBar : View {
      * * the new ring background color
      */
     fun setRingBackgroundColor(color: Int) {
-        circleRing!!.color = color
+        circleRing.color = color
     }
 
     /**
@@ -284,7 +280,7 @@ class CircularRangeSeekBar : View {
      * * the new progress color
      */
     fun setProgressColor(color: Int) {
-        circleColor!!.color = color
+        circleColor.color = color
     }
 
     /*
@@ -293,49 +289,56 @@ class CircularRangeSeekBar : View {
      * @see android.view.View#onTouchEvent(android.view.MotionEvent)
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.x
-        val y = event.y
+        val p = FloatPoint(event.x, event.y)
+
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            background
+//                    ?.also { it.setHotspot(p.x, p.y) }
+//                    ?.let { it as? RippleDrawable }
+//                    ?.setColor(ColorStateList.valueOf(Color.RED))
+//        }
+
+
         if (event.action == MotionEvent.ACTION_DOWN) {
-            val d_max = Math.max(dx, dy)
-            val x_ = x - cx
-            val y_ = y - cy
-            val r_sq = x_ * x_ + y_ * y_
-            val r_min = radius - 2f * d_max
-            val r_max = radius + 2f * d_max
+            val p_ = p - center
+            val r_sq = (p_ * p_).sum()
+            val r_min = radius - 2f * maxMargin
+            val r_max = radius + 2f * maxMargin
             if (r_sq >= r_min * r_min && r_sq <= r_max * r_max) {
-                IS_PRESSED1 = Math.pow((x - markPointX1).toDouble(), 2.0) + Math.pow((y - markPointY1).toDouble(), 2.0) < Math.pow((x - markPointX2).toDouble(), 2.0) + Math.pow((y - markPointY2).toDouble(), 2.0)
-                IS_PRESSED2 = !IS_PRESSED1
+                isPressed1 = p.squareDistance(markPoint1) < p.squareDistance(markPoint2)
+                isPressed2 = !isPressed1
                 parent.requestDisallowInterceptTouchEvent(true)
             }
         }
-        if (IS_PRESSED1 || IS_PRESSED2) {
+        if (isPressed1 || isPressed2) {
             var ang: Double
-            if (y == cy) {
-                if (x > cx)
+            if (p.y == center.y) {
+                if (p.x > center.x)
                     ang = Math.PI / 2.0
                 else
                     ang = Math.PI * 3.0 / 2.0
             } else {
-                ang = Math.atan(((x - cx) / (cy - y)).toDouble())
-                if (ang < 0) ang = Math.PI + ang
-                if (x < cx) ang += Math.PI
+                ang = Math.atan(((p.x - center.x) / (center.y - p.y)).toDouble())
+                if (ang < 0) ang += Math.PI
+                if (p.x < center.x) ang += Math.PI
             }
             var progress = (.5 + ang / (2.0 * Math.PI) * maxProgress.toDouble()).toInt()
             if (progress == maxProgress)
                 progress = 0
             //Log.d(Constants.LOG_TAG, "  Ang:"+ang+" prog:"+progress);
             setProgressInternal(
-                    if (IS_PRESSED1) progress else progress1,
-                    if (IS_PRESSED2) progress else progress2,
-                    false)
+                    if (isPressed1) progress else progress1,
+                    if (isPressed2) progress else progress2,
+                    true)
         }
         if (event.action == MotionEvent.ACTION_UP) {
             //getParent().requestDisallowInterceptTouchEvent(false);
-            IS_PRESSED1 = false
-            IS_PRESSED2 = false
+            isPressed1 = false
+            isPressed2 = false
         }
+
         invalidate()
-        return true
+        return super.onTouchEvent(event)
     }
 
     companion object : KLogging()
