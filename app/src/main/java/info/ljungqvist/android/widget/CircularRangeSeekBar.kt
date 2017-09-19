@@ -22,7 +22,6 @@ import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Build
-import android.support.v4.graphics.drawable.DrawableCompat
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -53,7 +52,7 @@ class CircularRangeSeekBar : View {
             }
     private var angle1 = 0                    // The angle of progress 1
     private var angle2 = 0                    // The angle of progress 2
-    private val startAngle = 270            // The start angle (12 O'clock
+    private val startAngle = 270              // The start angle (12 O'clock)
 
     var maxProgress = 100            // The maximum progress amount
 
@@ -85,16 +84,14 @@ class CircularRangeSeekBar : View {
     private val ripple: Drawable? =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 RippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
-                        .also {
-                            background = it
-                        }
+                        .also { background = it }
             } else {
                 null
             }
 
 
     init {
-        seekBarChangeListener = OnSeekChangeListener { view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean ->
+        seekBarChangeListener = OnSeekChangeListener { _, progress1, progress2, _ ->
             logger.debug { "p1: $progress1, p2: $progress2" }
         }
     }
@@ -132,19 +129,19 @@ class CircularRangeSeekBar : View {
         val widthSize = View.MeasureSpec.getSize(widthMeasureSpec)
         val heightSize = View.MeasureSpec.getSize(heightMeasureSpec)
 
-        val width: Int
-        if (View.MeasureSpec.getMode(widthMeasureSpec) == View.MeasureSpec.UNSPECIFIED) {
-            width = Math.max(widthSize, heightSize)
-        } else {
-            width = widthSize
-        }
+        val width: Int =
+                if (View.MeasureSpec.getMode(widthMeasureSpec) == View.MeasureSpec.UNSPECIFIED) {
+                    Math.max(widthSize, heightSize)
+                } else {
+                    widthSize
+                }
 
-        val height: Int
-        if (View.MeasureSpec.getMode(heightMeasureSpec) == View.MeasureSpec.UNSPECIFIED) {
-            height = Math.max(widthSize, heightSize)
-        } else {
-            height = heightSize
-        }
+        val height: Int =
+                if (View.MeasureSpec.getMode(heightMeasureSpec) == View.MeasureSpec.UNSPECIFIED) {
+                    Math.max(widthSize, heightSize)
+                } else {
+                    heightSize
+                }
 
         val diameter = Math.min(width - (2f * d.x).toInt(), height - (2f * d.y).toInt()) // Choose the smaller
         val size = (d * 2f).toIntPoint() + diameter
@@ -163,6 +160,17 @@ class CircularRangeSeekBar : View {
                 radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat(),
                 -radius * Math.cos(Math.toRadians(angle2.toDouble())).toFloat()
         )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ripple?.let { rip ->
+                (if (isPressed1) markPoint1 else markPoint2)
+                        .also { (x, y) -> drawableHotspotChanged(x, y) }
+                        .let(FloatPoint::toIntPoint)
+                        .let { (x, y) ->
+                            rip.setBounds(x - 50, y - 50, x + 50, y + 50)
+                        }
+            }
+        }
 
         rect.set(center.x - radius, center.y - radius, center.x + radius, center.y + radius) // assign size to rect
     }
@@ -240,12 +248,15 @@ class CircularRangeSeekBar : View {
     private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean) {
         var update = false
         if (this.progress1 != progress1) {
-            if (progress1 < 0)
-                this.progress1 = 0
-            else if (progress1 >= maxProgress)
-                this.progress1 = maxProgress - 1
-            else
-                this.progress1 = progress1
+            this.progress1 =
+                    when {
+                        progress1 < 0 ->
+                            0
+                        progress1 >= maxProgress ->
+                            maxProgress - 1
+                        else ->
+                            progress1
+                    }
             angle1 = 360 * this.progress1 / maxProgress
             markPoint1 = center + FloatPoint(
                     radius * Math.sin(Math.toRadians(angle1.toDouble())).toFloat(),
@@ -254,12 +265,15 @@ class CircularRangeSeekBar : View {
             update = true
         }
         if (this.progress2 != progress2) {
-            if (progress2 < 0)
-                this.progress2 = 0
-            else if (progress2 >= maxProgress)
-                this.progress2 = maxProgress - 1
-            else
-                this.progress2 = progress2
+            this.progress2 =
+                    when {
+                        progress2 < 0 ->
+                            0
+                        progress2 >= maxProgress ->
+                            maxProgress - 1
+                        else ->
+                            progress2
+                    }
             angle2 = 360 * this.progress2 / maxProgress
             markPoint2 = center + FloatPoint(
                     radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat(),
@@ -346,10 +360,10 @@ class CircularRangeSeekBar : View {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 ripple?.let { rip ->
                     (if (isPressed1) markPoint1 else markPoint2)
-                            .also { mark -> drawableHotspotChanged(mark.x, mark.y) }
+                            .also { (x, y) -> drawableHotspotChanged(x, y) }
                             .let(FloatPoint::toIntPoint)
-                            .let { mark ->
-                                DrawableCompat.setHotspotBounds(rip, mark.x - 50, mark.y - 50, mark.x + 50, mark.y + 50)
+                            .let { (x, y) ->
+                                rip.setBounds(x - 50, y - 50, x + 50, y + 50)
                             }
                 }
             }
