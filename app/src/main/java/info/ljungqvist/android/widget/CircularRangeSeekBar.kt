@@ -16,6 +16,7 @@
 
 package info.ljungqvist.android.widget
 
+import android.annotation.TargetApi
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.*
@@ -90,27 +91,24 @@ class CircularRangeSeekBar : View {
             }
 
 
-    init {
-        seekBarChangeListener = OnSeekChangeListener { _, progress1, progress2, _ ->
-            logger.debug { "p1: $progress1, p2: $progress2" }
-        }
-    }
-
-    constructor(context: Context) : super(context) {
-        initDrawable()
-    }
+    constructor(context: Context) : super(context)
 
     @JvmOverloads
-    constructor(context: Context, attrs: AttributeSet, defStyle: Int = 0, defStyleRes: Int = 0)
-            : super(context, attrs, defStyle, defStyleRes) {
-        initDrawable()
-    }
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int = 0)
+            : super(context, attrs, defStyle)
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int, defStyleRes: Int)
+            : super(context, attrs, defStyle, defStyleRes)
 
 
     /**
      * Inits the drawable.
      */
-    fun initDrawable() {
+    init {
+        seekBarChangeListener = OnSeekChangeListener { _, progress1, progress2, _ ->
+            logger.debug { "p1: $progress1, p2: $progress2" }
+        }
         Pair(
                 BitmapFactory.decodeResource(context.resources, R.drawable.scrubber_control_normal_holo),
                 BitmapFactory.decodeResource(context.resources, R.drawable.scrubber_control_pressed_holo)
@@ -122,6 +120,7 @@ class CircularRangeSeekBar : View {
                     Math.max(mark.height, markPressed.height).toFloat() / 2f
             )
         }
+        setProgressInternal(0, 0, false)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -152,27 +151,12 @@ class CircularRangeSeekBar : View {
         center = (size / 2).toFloatPoint()
         radius = diameter.toFloat() / 2f // Radius of the outer circle
 
-        markPoint1 = center + FloatPoint(
-                radius * Math.sin(Math.toRadians(angle1.toDouble())).toFloat(),
-                -radius * Math.cos(Math.toRadians(angle1.toDouble())).toFloat()
-        )
-        markPoint2 = center + FloatPoint(
-                radius * Math.sin(Math.toRadians(angle2.toDouble())).toFloat(),
-                -radius * Math.cos(Math.toRadians(angle2.toDouble())).toFloat()
-        )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            ripple?.let { rip ->
-                (if (isPressed1) markPoint1 else markPoint2)
-                        .also { (x, y) -> drawableHotspotChanged(x, y) }
-                        .let(FloatPoint::toIntPoint)
-                        .let { (x, y) ->
-                            rip.setBounds(x - 50, y - 50, x + 50, y + 50)
-                        }
-            }
-        }
 
         rect.set(center.x - radius, center.y - radius, center.x + radius, center.y + radius) // assign size to rect
+
+        setProgressInternal(progress1, progress2, false, true)
+
+
     }
 
     /*
@@ -237,17 +221,12 @@ class CircularRangeSeekBar : View {
     val maxMargin: Float
         get() = d.max()
 
-    /**
-     * Sets the progress.
+    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean) =
+            setProgressInternal(progress1, progress2, fromUser, false)
 
-     * @param progress1
-     * *
-     * @param progress2
-     * * the new progress
-     */
-    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean) {
+    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean, force: Boolean) {
         var update = false
-        if (this.progress1 != progress1) {
+        if (force || this.progress1 != progress1) {
             this.progress1 =
                     when {
                         progress1 < 0 ->
@@ -264,7 +243,7 @@ class CircularRangeSeekBar : View {
             )
             update = true
         }
-        if (this.progress2 != progress2) {
+        if (force || this.progress2 != progress2) {
             this.progress2 =
                     when {
                         progress2 < 0 ->
@@ -281,7 +260,18 @@ class CircularRangeSeekBar : View {
             )
             update = true
         }
-        if (update)
+
+        if (update && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ripple?.let { rip ->
+                (if (isPressed1) markPoint1 else markPoint2)
+                        .also { (x, y) -> drawableHotspotChanged(x, y) }
+                        .let(FloatPoint::toIntPoint)
+                        .let { (x, y) ->
+                            rip.setBounds(x - 50, y - 50, x + 50, y + 50)
+                        }
+            }
+        }
+        if (update && !force)
             seekBarChangeListener?.onProgressChange(this, this.progress1, this.progress2, fromUser)
     }
 
