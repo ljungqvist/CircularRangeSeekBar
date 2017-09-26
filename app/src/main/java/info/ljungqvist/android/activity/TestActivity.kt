@@ -19,9 +19,14 @@ package info.ljungqvist.android.activity
 import android.app.Activity
 import android.os.Bundle
 import info.ljungqvist.android.widget.BuildConfig
+import info.ljungqvist.android.widget.CircularRangeSeekBar2
 
 import info.ljungqvist.android.widget.R
+import mu.KLogging
 import org.slf4j.impl.HandroidLoggerAdapter
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 
 class TestActivity : Activity() {
@@ -30,8 +35,23 @@ class TestActivity : Activity() {
         HandroidLoggerAdapter.DEBUG = BuildConfig.DEBUG;
     }
 
+    var count = 0
+    var f: ScheduledFuture<*>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test)
+
+        val bar: CircularRangeSeekBar2 = findViewById(R.id.circular_range_seek_bar_2)
+
+        f = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
+            logger.debug { "#run $count  " }
+            bar.setProgress(count % 120, (count + 40) % 100)
+            logger.debug { "#run  notdone $count  " }
+            count++
+            logger.debug { "#run done $count  " }
+        }, 100, 100, TimeUnit.MILLISECONDS)
     }
+
+    companion object : KLogging()
 }

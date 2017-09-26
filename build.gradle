@@ -2,8 +2,8 @@
 
 buildscript {
 
-    ext.kotlin_version = "1.1.4-3"
-    ext.supportLibVersion = "26.0.1"
+    ext.kotlin_version = "1.1.50"
+    ext.supportLibVersion = "26.1.0"
     repositories {
         jcenter()
         maven {

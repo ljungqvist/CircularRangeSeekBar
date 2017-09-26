@@ -24,6 +24,7 @@
             android:text="@string/circular_range_seek_bar" />
 
         <info.ljungqvist.android.widget.CircularRangeSeekBar2
+            android:id="@+id/circular_range_seek_bar_2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
