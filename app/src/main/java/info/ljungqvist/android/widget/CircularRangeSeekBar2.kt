@@ -4,6 +4,8 @@ import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Build
 import android.support.annotation.DrawableRes
 import android.util.AttributeSet
@@ -12,6 +14,7 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import mu.KLogging
+import kotlin.properties.Delegates
 
 class CircularRangeSeekBar2 : FrameLayout {
 
@@ -26,17 +29,42 @@ class CircularRangeSeekBar2 : FrameLayout {
     constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
             : super(context, attributeSet, defStyleAttr, defStyleRes)
 
+
+    // The color of the progress ring
+    private val arcPaint: Paint = Paint()
+            .apply {
+                color = Color.parseColor("#ff33b5e5")
+                isAntiAlias = true
+                strokeWidth = 5f
+                style = Paint.Style.STROKE
+            }
+    // The progress circle ring background
+    private val circlePaint: Paint = Paint()
+            .apply {
+                color = Color.GRAY
+                isAntiAlias = true
+                strokeWidth = 5f
+                style = Paint.Style.STROKE
+            }
+
     private val thumb1: Thumb = Thumb(context, this)
     private val thumb2: Thumb = Thumb(context, this)
 
     private var progress1 = 0
-    private var progress2 = 50
-    private var progressMax = 100
+    private var progress2 = 0
+    var startAngle by Delegates.observable(270.0) { _, old, new ->
+        if (old != new) {
+            setProgressInternal(progress1, progress2, false, true)
+        }
+    }
+    private var angle1 = startAngle
+    private var angle2 = startAngle
+
+    var progressMax by uiProperty(100)
 
     private var size = -1
     private var thumbSize = -1
-
-    private var needsUpdating = false
+    private val arcRect = RectF()        // The rectangle containing our circles and arcs
 
     init {
         setBackgroundColor(Color.LTGRAY)
@@ -52,11 +80,12 @@ class CircularRangeSeekBar2 : FrameLayout {
                 thumb1.drawable.let { Math.max(it.intrinsicWidth, it.intrinsicHeight) },
                 thumb2.drawable.let { Math.max(it.intrinsicWidth, it.intrinsicHeight) }
         )
-        invalidateThis()
+        updateRect()
+        post { invalidate() }
     }
 
     fun setProgress(progress1: Int, progress2: Int) {
-        setProgressInternal(progress1, progress2, false)
+        setProgressInternal(progress1, progress2, false, false)
     }
 
     override fun onAttachedToWindow() {
@@ -87,7 +116,8 @@ class CircularRangeSeekBar2 : FrameLayout {
         val newSize = Math.min(width, height)
         if (newSize != size) {
             size = newSize
-            invalidateThis()
+            updateRect()
+            invalidate()
         }
         val spec = MeasureSpec.makeMeasureSpec(newSize, MeasureSpec.EXACTLY)
         //MUST CALL THIS
@@ -95,14 +125,13 @@ class CircularRangeSeekBar2 : FrameLayout {
     }
 
     override fun onDraw(canvas: Canvas) {
-        val angle1 = progress1.toDouble() / progressMax * 360 - 90
-        val angle2 = progress2.toDouble() / progressMax * 360 - 90
+        val mid = size.toFloat() / 2
+        val radius = mid - (thumbSize.toFloat() / 2)
+        canvas.drawCircle(mid, mid, radius, circlePaint)
+        canvas.drawArc(arcRect, angle1.toFloat(), (angle2 - angle1).inDegrees().toFloat(), false, arcPaint)
 
-        if (needsUpdating) {
-            setPadding(thumb1, angle1)
-            setPadding(thumb2, angle2)
-            needsUpdating = false
-        }
+        setPadding(thumb1, angle1)
+        setPadding(thumb2, angle2)
 
         super.onDraw(canvas)
     }
@@ -114,19 +143,25 @@ class CircularRangeSeekBar2 : FrameLayout {
         thumb.setPadding(paddingLeft, paddingTop, 0, 0)
     }
 
+    private fun updateRect() {
+        val upperLeft = thumbSize.toFloat() / 2
+        val lowerRight = size.toFloat() - upperLeft
+        arcRect.set(upperLeft, upperLeft, lowerRight, lowerRight)
+    }
 
-    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean) {
-        var changed = false
+
+    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean, forceChane: Boolean) {
+        var changed = forceChane
 
         progress1
-                .limit()
+                .limitProgress()
                 .takeUnless { it == this.progress1 }
                 ?.let {
                     this.progress1 = it
                     changed = true
                 }
         progress2
-                .limit()
+                .limitProgress()
                 .takeUnless { it == this.progress2 }
                 ?.let {
                     this.progress2 = it
@@ -134,24 +169,30 @@ class CircularRangeSeekBar2 : FrameLayout {
                 }
 
         if (changed) {
-            invalidateThis()
+            angle1 = (progress1.toDouble() * 360 / progressMax + startAngle).inDegrees()
+            angle2 = (progress2.toDouble() * 360 / progressMax + startAngle).inDegrees()
+            post { invalidate() }
         }
     }
 
-    private fun Int.limit(): Int =
-        when {
-            this < 0 -> 0
-            this >= progressMax -> progressMax - 1
-            else -> this
-        }
+    private tailrec fun Int.limitProgress(): Int = when {
+        this < 0 -> (this + progressMax).limitProgress()
+        this >= progressMax -> (this - progressMax).limitProgress()
+        else -> this
+    }
+
+    private tailrec fun Double.inDegrees(): Double = when {
+        this < 0.0 -> (this + 360.0).inDegrees()
+        this >= 360.0 -> (this - 360.0).inDegrees()
+        else -> this
+    }
 
     private fun thumbTouch(thumb: Int, x: Float, y: Float) {
 
     }
 
-    private fun invalidateThis() {
-        needsUpdating = true
-        post { invalidate() }
+    private fun <T> uiProperty(value: T) = Delegates.observable(value) { _, old, new ->
+        if (old != new) post { invalidate() }
     }
 
     private companion object : KLogging()
