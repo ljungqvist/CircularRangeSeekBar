@@ -47,8 +47,8 @@ class CircularRangeSeekBar2 : FrameLayout {
                 style = Paint.Style.STROKE
             }
 
-    private val thumb1: Thumb = Thumb(context, this)
-    private val thumb2: Thumb = Thumb(context, this)
+    private val thumb1: Thumb = Thumb(context) { x, y -> thumbTouch(true, x, y) }
+    private val thumb2: Thumb = Thumb(context) { x, y -> thumbTouch(false, x, y) }
 
     private var progress1 = 0
     private var progress2 = 0
@@ -68,9 +68,7 @@ class CircularRangeSeekBar2 : FrameLayout {
 
     init {
         setBackgroundColor(Color.LTGRAY)
-        thumb1.listener = { x, y -> thumbTouch(1, x, y) }
-        thumb2.listener = { x, y -> thumbTouch(2, x, y) }
-        setImageResource(R.drawable.scrubber_control_normal_holo)
+        setImageResource(R.drawable.scrubber_control_holo)
     }
 
     fun setImageResource(@DrawableRes resId: Int) {
@@ -150,8 +148,8 @@ class CircularRangeSeekBar2 : FrameLayout {
     }
 
 
-    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean, forceChane: Boolean) {
-        var changed = forceChane
+    private fun setProgressInternal(progress1: Int, progress2: Int, fromUser: Boolean, forceChange: Boolean) {
+        var changed = forceChange
 
         progress1
                 .limitProgress()
@@ -187,8 +185,27 @@ class CircularRangeSeekBar2 : FrameLayout {
         else -> this
     }
 
-    private fun thumbTouch(thumb: Int, x: Float, y: Float) {
-
+    private fun thumbTouch(isThumb1: Boolean, xIn: Float, yIn: Float) {
+        logger.debug { "thumb $isThumb1 ($xIn, $yIn)" }
+        val halfSize = size.toDouble() / 2.0
+        val x = xIn.toDouble()  - halfSize
+        val y = yIn.toDouble() - halfSize
+        val angle =
+                (360.0 / 2.0 / Math.PI *
+                        if (0.0 == x) {
+                            if (y > 0) Math.PI / 2
+                            else -Math.PI / 2
+                        } else {
+                            Math.atan(y / x) + if (x >= 0) 0.0 else Math.PI
+                        } -
+                        startAngle)
+                        .inDegrees()
+        val progress = (angle / 360.0 * progressMax).toInt()
+        if (isThumb1) {
+            setProgressInternal(progress, progress2, true, false)
+        } else {
+            setProgressInternal(progress1, progress, true, false)
+        }
     }
 
     private fun <T> uiProperty(value: T) = Delegates.observable(value) { _, old, new ->
@@ -203,9 +220,7 @@ class CircularRangeSeekBar2 : FrameLayout {
         var sdf = 0
     }
 
-    private class Thumb(context: Context, val seekCircle: CircularRangeSeekBar2) : ImageView(context) {
-
-        internal var listener: ((Float, Float) -> Unit)? = null
+    private class Thumb(context: Context, val updateLocation: (x: Float, y: Float) -> Unit) : ImageView(context) {
 
         init {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
@@ -215,11 +230,22 @@ class CircularRangeSeekBar2 : FrameLayout {
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             logger.debug { "HIT: ${event.x}, ${event.y}" }
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                parent.requestDisallowInterceptTouchEvent(true)
+            return when (event.action) {
+                MotionEvent.ACTION_DOWN ->
+                    if (event.x >= paddingLeft && event.y >= paddingTop) {
+                        parent.requestDisallowInterceptTouchEvent(true)
+                        super.onTouchEvent(event)
+                    } else {
+                        false
+                    }
+                MotionEvent.ACTION_MOVE -> {
+                    updateLocation(event.x, event.y)
+                    true
+                }
+                else -> {
+                    super.onTouchEvent(event)
+                }
             }
-            listener?.invoke(event.x, event.y)
-            return super.onTouchEvent(event)
         }
 
         private companion object : KLogging()

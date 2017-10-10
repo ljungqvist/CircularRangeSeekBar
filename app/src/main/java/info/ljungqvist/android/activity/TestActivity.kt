@@ -35,25 +35,9 @@ class TestActivity : Activity() {
         HandroidLoggerAdapter.DEBUG = BuildConfig.DEBUG;
     }
 
-    var p1 = 0f
-    var p2 = 0f
-    var f: ScheduledFuture<*>? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test)
-
-        val bar: CircularRangeSeekBar2 = findViewById(R.id.circular_range_seek_bar_2)
-
-        bar.progressMax = 1000
-
-        val r: Random = Random()
-
-        f = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
-            bar.setProgress(p1.toInt() % 1000, p2.toInt() % 1000)
-            p1 += r.nextInt(100).toFloat() / 10
-            p2 += r.nextInt(100).toFloat() / 10
-        }, 100, 20, TimeUnit.MILLISECONDS)
     }
 
     companion object : KLogging()
