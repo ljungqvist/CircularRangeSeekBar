@@ -19,14 +19,10 @@ package info.ljungqvist.android.activity
 import android.app.Activity
 import android.os.Bundle
 import info.ljungqvist.android.widget.BuildConfig
-import info.ljungqvist.android.widget.CircularRangeSeekBar2
+import info.ljungqvist.android.widget.CircularRangeSeekBar
 import info.ljungqvist.android.widget.R
 import mu.KLogging
 import org.slf4j.impl.HandroidLoggerAdapter
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 
 
 class TestActivity : Activity() {
@@ -39,9 +35,9 @@ class TestActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test)
 
-        val bar: CircularRangeSeekBar2 = findViewById(R.id.circular_range_seek_bar_2)
+        val bar: CircularRangeSeekBar = findViewById(R.id.circular_range_seek_bar_2)
 
-        bar.seekBarChangeListener = CircularRangeSeekBar2.OnSeekChangeListener{ view, p1, p2, fromUser ->
+        bar.seekBarChangeListener = CircularRangeSeekBar.OnSeekChangeListener{ view, p1, p2, fromUser ->
             logger.debug { "$p1 - $p2, from user: $fromUser" }
         }
     }
