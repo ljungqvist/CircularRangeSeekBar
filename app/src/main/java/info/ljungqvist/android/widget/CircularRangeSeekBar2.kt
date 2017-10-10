@@ -30,6 +30,8 @@ class CircularRangeSeekBar2 : FrameLayout {
             : super(context, attributeSet, defStyleAttr, defStyleRes)
 
 
+    var seekBarChangeListener: OnSeekChangeListener? = null
+
     // The color of the progress ring
     private val arcPaint: Paint = Paint()
             .apply {
@@ -169,7 +171,10 @@ class CircularRangeSeekBar2 : FrameLayout {
         if (changed) {
             angle1 = (progress1.toDouble() * 360 / progressMax + startAngle).inDegrees()
             angle2 = (progress2.toDouble() * 360 / progressMax + startAngle).inDegrees()
-            post { invalidate() }
+            post {
+                invalidate()
+                seekBarChangeListener?.onProgressChange(this, progress1, progress2, fromUser)
+            }
         }
     }
 
@@ -186,9 +191,8 @@ class CircularRangeSeekBar2 : FrameLayout {
     }
 
     private fun thumbTouch(isThumb1: Boolean, xIn: Float, yIn: Float) {
-        logger.debug { "thumb $isThumb1 ($xIn, $yIn)" }
         val halfSize = size.toDouble() / 2.0
-        val x = xIn.toDouble()  - halfSize
+        val x = xIn.toDouble() - halfSize
         val y = yIn.toDouble() - halfSize
         val angle =
                 (360.0 / 2.0 / Math.PI *
@@ -212,7 +216,15 @@ class CircularRangeSeekBar2 : FrameLayout {
         if (old != new) post { invalidate() }
     }
 
-    private companion object : KLogging()
+    companion object : KLogging() {
+
+        fun OnSeekChangeListener(listener: (CircularRangeSeekBar2, Int, Int, Boolean) -> Unit): OnSeekChangeListener =
+                object : OnSeekChangeListener {
+                    override fun onProgressChange(view: CircularRangeSeekBar2, progress1: Int, progress2: Int, fromUser: Boolean) =
+                            listener(view, progress1, progress2, fromUser)
+                }
+
+    }
 
     private class ProgressInfo {
         var progress = 0
@@ -229,7 +241,6 @@ class CircularRangeSeekBar2 : FrameLayout {
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            logger.debug { "HIT: ${event.x}, ${event.y}" }
             return when (event.action) {
                 MotionEvent.ACTION_DOWN ->
                     if (event.x >= paddingLeft && event.y >= paddingTop) {
@@ -250,5 +261,11 @@ class CircularRangeSeekBar2 : FrameLayout {
 
         private companion object : KLogging()
 
+    }
+
+
+    interface OnSeekChangeListener {
+
+        fun onProgressChange(view: CircularRangeSeekBar2, progress1: Int, progress2: Int, fromUser: Boolean)
     }
 }

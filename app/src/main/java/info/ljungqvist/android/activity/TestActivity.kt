@@ -38,6 +38,12 @@ class TestActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test)
+
+        val bar: CircularRangeSeekBar2 = findViewById(R.id.circular_range_seek_bar_2)
+
+        bar.seekBarChangeListener = CircularRangeSeekBar2.OnSeekChangeListener{ view, p1, p2, fromUser ->
+            logger.debug { "$p1 - $p2, from user: $fromUser" }
+        }
     }
 
     companion object : KLogging()
