@@ -18,6 +18,7 @@ package info.ljungqvist.android.activity
 
 import android.app.Activity
 import android.os.Bundle
+import android.widget.TextView
 import info.ljungqvist.android.widget.BuildConfig
 import info.ljungqvist.android.widget.CircularRangeSeekBar
 import info.ljungqvist.android.widget.R
@@ -31,6 +32,9 @@ class TestActivity : Activity() {
         HandroidLoggerAdapter.DEBUG = BuildConfig.DEBUG;
     }
 
+    private val fromTextView by lazy { findViewById<TextView>(R.id.from) }
+    private val toTextView by lazy { findViewById<TextView>(R.id.to) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test)
@@ -39,6 +43,8 @@ class TestActivity : Activity() {
 
         bar.seekBarChangeListener = CircularRangeSeekBar.OnSeekChangeListener{ view, p1, p2, fromUser ->
             logger.debug { "$p1 - $p2, from user: $fromUser" }
+            fromTextView.text = "From: $p1"
+            toTextView.text = "To: $p2"
         }
     }
 

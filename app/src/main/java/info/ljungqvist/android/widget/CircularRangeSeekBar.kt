@@ -2,10 +2,13 @@ package info.ljungqvist.android.widget
 
 import android.annotation.TargetApi
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.support.annotation.DrawableRes
 import android.util.AttributeSet
@@ -51,6 +54,7 @@ class CircularRangeSeekBar : FrameLayout {
 
     private val thumb1: Thumb = Thumb(context) { x, y -> thumbTouch(true, x, y) }
     private val thumb2: Thumb = Thumb(context) { x, y -> thumbTouch(false, x, y) }
+    private var thumbActive: Thumb? = null
 
     private var progress1 = 0
     private var progress2 = 0
@@ -69,7 +73,7 @@ class CircularRangeSeekBar : FrameLayout {
     private val arcRect = RectF()        // The rectangle containing our circles and arcs
 
     init {
-        setBackgroundColor(Color.LTGRAY)
+        setBackgroundColor(Color.TRANSPARENT)
         setImageResource(R.drawable.scrubber_control_holo)
     }
 
@@ -136,11 +140,63 @@ class CircularRangeSeekBar : FrameLayout {
         super.onDraw(canvas)
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean =
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    val mid = size.toFloat() / 2.0
+                    val innerR = mid - thumbSize
+                    val dx = event.x - mid
+                    val dy = event.y - mid
+                    val rSq = dx * dx + dy * dy
+                    logger.debug { "r = ${Math.sqrt(rSq)}, outer = $mid, inner = $innerR" }
+                    if (rSq < mid * mid && rSq > innerR * innerR) {
+                        if (sqDist(event.x, event.y, thumb1) <= sqDist(event.x, event.y, thumb2)) {
+                            thumb1
+                        } else {
+                            thumb2
+                        }
+                                .also { thumbActive = it }
+                                .internalOnTouchEvent(event)
+                    } else {
+                        super.onTouchEvent(event)
+                    }
+                }
+                MotionEvent.ACTION_MOVE ->
+                    thumbActive
+                            ?.internalOnTouchEvent(event)
+                            ?: super.onTouchEvent(event)
+                else ->
+                    thumbActive
+                            ?.also { thumbActive = null }
+                            ?.internalOnTouchEvent(event)
+                            ?: super.onTouchEvent(event)
+            }
+
+    private fun sqDist(x: Float, y: Float, thumb: Thumb): Float {
+        val dx = thumb.paddingLeft + thumbSize / 2 - x
+        val dy = thumb.paddingTop + thumbSize / 2 - y
+        return dx * dx + dy * dy
+    }
+
     private fun setPadding(thumb: Thumb, angle: Double) {
         val mid = (size - thumbSize) / 2
         val paddingLeft = mid + (Math.cos(Math.toRadians(angle)) * mid).toInt()
         val paddingTop = mid + (Math.sin(Math.toRadians(angle)) * mid).toInt()
         thumb.setPadding(paddingLeft, paddingTop, 0, 0)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            thumb.ripple
+                    ?.also {
+                        thumb.drawableHotspotChanged(
+                                paddingLeft.toFloat() + thumbSize / 2,
+                                paddingTop.toFloat() + thumbSize / 2)
+                    }
+                    ?.setBounds(
+                            paddingLeft,
+                            paddingTop,
+                            paddingLeft + 100,
+                            paddingTop + 100)
+        }
     }
 
     private fun updateRect() {
@@ -226,13 +282,15 @@ class CircularRangeSeekBar : FrameLayout {
 
     }
 
-    private class ProgressInfo {
-        var progress = 0
-        var angle = 0
-        var sdf = 0
-    }
-
     private class Thumb(context: Context, val updateLocation: (x: Float, y: Float) -> Unit) : ImageView(context) {
+
+        internal val ripple: Drawable? =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    RippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
+                            .also { background = it }
+                } else {
+                    null
+                }
 
         init {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
@@ -240,24 +298,31 @@ class CircularRangeSeekBar : FrameLayout {
             isFocusable = true
         }
 
-        override fun onTouchEvent(event: MotionEvent): Boolean {
-            return when (event.action) {
-                MotionEvent.ACTION_DOWN ->
-                    if (event.x >= paddingLeft && event.y >= paddingTop) {
+        internal fun internalOnTouchEvent(event: MotionEvent): Boolean =
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
                         parent.requestDisallowInterceptTouchEvent(true)
                         super.onTouchEvent(event)
-                    } else {
-                        false
                     }
-                MotionEvent.ACTION_MOVE -> {
-                    updateLocation(event.x, event.y)
-                    true
+                    MotionEvent.ACTION_MOVE -> {
+                        updateLocation(event.x, event.y)
+                        true
+                    }
+                    else ->
+                        super.onTouchEvent(event)
                 }
-                else -> {
-                    super.onTouchEvent(event)
+
+        override fun onTouchEvent(event: MotionEvent): Boolean =
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN ->
+                        if (event.x >= paddingLeft && event.y >= paddingTop) {
+                            internalOnTouchEvent(event)
+                        } else {
+                            false
+                        }
+                    else ->
+                        internalOnTouchEvent(event)
                 }
-            }
-        }
 
         private companion object : KLogging()
 
