@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.support.annotation.DrawableRes
 import android.util.AttributeSet
@@ -31,6 +32,9 @@ class CircularRangeSeekBar : FrameLayout {
     constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
             : super(context, attributeSet, defStyleAttr, defStyleRes)
 
+    init {
+        isClickable = true
+    }
 
     var seekBarChangeListener: OnSeekChangeListener? = null
 
@@ -75,6 +79,18 @@ class CircularRangeSeekBar : FrameLayout {
         setBackgroundColor(Color.TRANSPARENT)
         setImageResource(R.drawable.scrubber_control_holo)
     }
+
+
+    internal val ripple: RippleDrawable? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                RippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
+                        .also {
+
+                            background = it
+                        }
+            } else {
+                null
+            }
 
     fun setImageResource(@DrawableRes resId: Int) {
         thumb1.setImageResource(resId)
@@ -149,6 +165,7 @@ class CircularRangeSeekBar : FrameLayout {
                     val rSq = dx * dx + dy * dy
                     logger.debug { "r = ${Math.sqrt(rSq)}, outer = $mid, inner = $innerR" }
                     if (rSq < mid * mid && rSq > innerR * innerR) {
+                        isPressed = true
                         if (sqDist(event.x, event.y, thumb1) <= sqDist(event.x, event.y, thumb2)) {
                             thumb1
                         } else {
@@ -157,18 +174,20 @@ class CircularRangeSeekBar : FrameLayout {
                                 .also { thumbActive = it }
                                 .internalOnTouchEvent(event)
                     } else {
-                        super.onTouchEvent(event)
+                        false
                     }
                 }
                 MotionEvent.ACTION_MOVE ->
                     thumbActive
                             ?.internalOnTouchEvent(event)
-                            ?: super.onTouchEvent(event)
-                else ->
+                            ?: false
+                else -> {
+                    isPressed = false
                     thumbActive
                             ?.also { thumbActive = null }
                             ?.internalOnTouchEvent(event)
-                            ?: super.onTouchEvent(event)
+                            ?: false
+                }
             }
 
     private fun sqDist(x: Float, y: Float, thumb: Thumb): Float {
@@ -182,6 +201,9 @@ class CircularRangeSeekBar : FrameLayout {
         val paddingLeft = mid + (Math.cos(Math.toRadians(angle)) * mid).toInt()
         val paddingTop = mid + (Math.sin(Math.toRadians(angle)) * mid).toInt()
         thumb.setPadding(paddingLeft, paddingTop, thumbSize)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            drawableHotspotChanged(paddingLeft.toFloat(), paddingTop.toFloat())
+        }
     }
 
     private fun updateRect() {
@@ -269,13 +291,16 @@ class CircularRangeSeekBar : FrameLayout {
 
     private class Thumb(context: Context, val updateLocation: (x: Float, y: Float) -> Unit) : ImageView(context) {
 
-        internal val ripple: NonChangingBoundsRippleDrawable? =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    NonChangingBoundsRippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
-                            .also { background = it }
-                } else {
-                    null
-                }
+//        internal val ripple: NonChangingBoundsRippleDrawable? =
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                    NonChangingBoundsRippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
+//                            .also {
+//
+//                                background = it
+//                            }
+//                } else {
+//                    null
+//                }
 
         init {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
@@ -299,15 +324,15 @@ class CircularRangeSeekBar : FrameLayout {
 
         fun setPadding(left: Int, top: Int, thumbSize: Int) {
             setPadding(left, top, 0, 0)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val overflow = thumbSize / 2
-                drawableHotspotChanged(left.toFloat() + thumbSize / 2, top.toFloat() + thumbSize / 2)
-                ripple?.setBoundsInternal(
-                        left - overflow,
-                        top - overflow,
-                        left + thumbSize + overflow,
-                        top + thumbSize + overflow)
-            }
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                val overflow = thumbSize / 2
+//                drawableHotspotChanged(left.toFloat() + thumbSize / 2, top.toFloat() + thumbSize / 2)
+//                ripple?.setBoundsInternal(
+//                        left - overflow,
+//                        top - overflow,
+//                        left + thumbSize + overflow,
+//                        top + thumbSize + overflow)
+//            }
         }
 
 
