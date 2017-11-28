@@ -7,7 +7,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.support.annotation.DrawableRes
 import android.util.AttributeSet
@@ -81,13 +80,10 @@ class CircularRangeSeekBar : FrameLayout {
     }
 
 
-    internal val ripple: RippleDrawable? =
+    private val ripple: NonChangingBoundsRippleDrawable? =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                RippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
-                        .also {
-
-                            background = it
-                        }
+                NonChangingBoundsRippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
+                        .also { background = it }
             } else {
                 null
             }
@@ -201,9 +197,6 @@ class CircularRangeSeekBar : FrameLayout {
         val paddingLeft = mid + (Math.cos(Math.toRadians(angle)) * mid).toInt()
         val paddingTop = mid + (Math.sin(Math.toRadians(angle)) * mid).toInt()
         thumb.setPadding(paddingLeft, paddingTop, thumbSize)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            drawableHotspotChanged(paddingLeft.toFloat(), paddingTop.toFloat())
-        }
     }
 
     private fun updateRect() {
@@ -257,6 +250,20 @@ class CircularRangeSeekBar : FrameLayout {
         val halfSize = size.toDouble() / 2.0
         val x = xIn.toDouble() - halfSize
         val y = yIn.toDouble() - halfSize
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val overflow = thumbSize / 2
+            val ratio = (halfSize - thumbSize / 2) / Math.sqrt(x * x + y * y)
+            val activeX = x * ratio + halfSize
+            val activeY = y * ratio + halfSize
+            drawableHotspotChanged(activeX.toFloat(), activeY.toFloat())
+            ripple?.setBoundsInternal(
+                    activeX.toInt() - overflow,
+                    activeY.toInt() - overflow,
+                    activeX.toInt() + overflow,
+                    activeY.toInt() + overflow)
+        }
+
         val angle =
                 (360.0 / 2.0 / Math.PI *
                         if (0.0 == x) {
@@ -267,7 +274,7 @@ class CircularRangeSeekBar : FrameLayout {
                         } -
                         startAngle)
                         .inDegrees()
-        val progress = (angle / 360.0 * progressMax).toInt()
+        val progress = (angle / 360.0 * progressMax + .5).toInt()
         if (isThumb1) {
             setProgressInternal(progress, progress2, true, false)
         } else {
@@ -281,6 +288,7 @@ class CircularRangeSeekBar : FrameLayout {
 
     companion object {
 
+        @Suppress("FunctionName")
         fun OnSeekChangeListener(listener: (CircularRangeSeekBar, Int, Int, Boolean) -> Unit): OnSeekChangeListener =
                 object : OnSeekChangeListener {
                     override fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean) =
@@ -289,18 +297,11 @@ class CircularRangeSeekBar : FrameLayout {
 
     }
 
-    private class Thumb(context: Context, val updateLocation: (x: Float, y: Float) -> Unit) : ImageView(context) {
+    interface OnSeekChangeListener {
+        fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean)
+    }
 
-//        internal val ripple: NonChangingBoundsRippleDrawable? =
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                    NonChangingBoundsRippleDrawable(ColorStateList(arrayOf(intArrayOf()), intArrayOf(Color.LTGRAY)), null, null)
-//                            .also {
-//
-//                                background = it
-//                            }
-//                } else {
-//                    null
-//                }
+    private class Thumb(context: Context, val updateLocation: (x: Float, y: Float) -> Unit) : ImageView(context) {
 
         init {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
@@ -324,39 +325,15 @@ class CircularRangeSeekBar : FrameLayout {
 
         fun setPadding(left: Int, top: Int, thumbSize: Int) {
             setPadding(left, top, 0, 0)
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                val overflow = thumbSize / 2
-//                drawableHotspotChanged(left.toFloat() + thumbSize / 2, top.toFloat() + thumbSize / 2)
-//                ripple?.setBoundsInternal(
-//                        left - overflow,
-//                        top - overflow,
-//                        left + thumbSize + overflow,
-//                        top + thumbSize + overflow)
-//            }
         }
 
 
-        override fun onTouchEvent(event: MotionEvent): Boolean =
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN ->
-                        if (event.x >= paddingLeft && event.y >= paddingTop) {
-                            internalOnTouchEvent(event)
-                        } else {
-                            false
-                        }
-                    else ->
-                        internalOnTouchEvent(event)
-                }
+        override fun onTouchEvent(event: MotionEvent): Boolean = false
 
         private companion object : KLogging()
 
     }
-
-
-    interface OnSeekChangeListener {
-
-        fun onProgressChange(view: CircularRangeSeekBar, progress1: Int, progress2: Int, fromUser: Boolean)
-    }
 }
+
 
 private val logger = KotlinLogging.logger {}
