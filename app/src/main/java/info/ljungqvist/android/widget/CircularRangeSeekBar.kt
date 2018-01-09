@@ -251,19 +251,6 @@ class CircularRangeSeekBar : FrameLayout {
         val x = xIn.toDouble() - halfSize
         val y = yIn.toDouble() - halfSize
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val overflow = thumbSize / 2
-            val ratio = (halfSize - thumbSize / 2) / Math.sqrt(x * x + y * y)
-            val activeX = x * ratio + halfSize
-            val activeY = y * ratio + halfSize
-            drawableHotspotChanged(activeX.toFloat(), activeY.toFloat())
-            ripple?.setBoundsInternal(
-                    activeX.toInt() - overflow,
-                    activeY.toInt() - overflow,
-                    activeX.toInt() + overflow,
-                    activeY.toInt() + overflow)
-        }
-
         val angle =
                 (360.0 / 2.0 / Math.PI *
                         if (0.0 == x) {
@@ -274,13 +261,28 @@ class CircularRangeSeekBar : FrameLayout {
                         } -
                         startAngle)
                         .inDegrees()
+
         val progress = (angle / 360.0 * progressMax + .5).toInt()
+
         if (isThumb1) {
             setProgressInternal(progress, progress2, true, false)
         } else {
             setProgressInternal(progress1, progress, true, false)
         }
-    }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val overflow = thumbSize / 2
+            val r = halfSize - thumbSize / 2
+            val a = (progress.toDouble() * 360 / progressMax + startAngle).inDegrees()
+            val activeX = (Math.cos(Math.toRadians(a)) * r) + halfSize
+            val activeY = (Math.sin(Math.toRadians(a)) * r) + halfSize
+            drawableHotspotChanged(activeX.toFloat(), activeY.toFloat())
+            ripple?.setBoundsInternal(
+                    activeX.toInt() - overflow,
+                    activeY.toInt() - overflow,
+                    activeX.toInt() + overflow,
+                    activeY.toInt() + overflow)
+        }    }
 
     private fun <T> uiProperty(value: T) = Delegates.observable(value) { _, old, new ->
         if (old != new) post { invalidate() }
