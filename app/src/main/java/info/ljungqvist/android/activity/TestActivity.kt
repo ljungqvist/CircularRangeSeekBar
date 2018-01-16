@@ -41,7 +41,7 @@ class TestActivity : Activity() {
 
         val bar: CircularRangeSeekBar = findViewById(R.id.circular_range_seek_bar_2)
 
-        bar.seekBarChangeListener = CircularRangeSeekBar.OnSeekChangeListener{ view, p1, p2, fromUser ->
+        bar.seekBarChangeListener = CircularRangeSeekBar.OnSeekChangeListener{ _, p1, p2, fromUser ->
             logger.debug { "$p1 - $p2, from user: $fromUser" }
             fromTextView.text = "From: $p1"
             toTextView.text = "To: $p2"
