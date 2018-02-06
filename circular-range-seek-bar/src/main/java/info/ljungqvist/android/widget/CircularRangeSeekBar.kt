@@ -16,6 +16,7 @@
 
 package info.ljungqvist.android.widget
 
+import android.animation.AnimatorInflater
 import android.annotation.TargetApi
 import android.content.Context
 import android.content.res.ColorStateList
@@ -92,7 +93,7 @@ class CircularRangeSeekBar : FrameLayout {
 
     init {
         setBackgroundColor(Color.TRANSPARENT)
-        setImageResource(R.drawable.scrubber_control_holo)
+        setImageResource(R.drawable.scrubber_control_normal_holo)
     }
 
 
@@ -106,7 +107,9 @@ class CircularRangeSeekBar : FrameLayout {
 
     fun setImageResource(@DrawableRes resId: Int) {
         thumb1.setImageResource(resId)
+        thumb1.stateListAnimator = AnimatorInflater.loadStateListAnimator(context, R.animator.scrubber_control_holo_anim)
         thumb2.setImageResource(resId)
+        thumb2.stateListAnimator = AnimatorInflater.loadStateListAnimator(context, R.animator.scrubber_control_holo_anim)
         thumbSize = Math.max(
                 thumb1.drawable.let { Math.max(it.intrinsicWidth, it.intrinsicHeight) },
                 thumb2.drawable.let { Math.max(it.intrinsicWidth, it.intrinsicHeight) }

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--<item android:state_pressed="true"-->
+    <!--android:drawable="@drawable/scrubber_control_pressed_holo" /> &lt;!&ndash; pressed &ndash;&gt;-->
+    <!--<item android:state_activated="true"-->
+    <!--android:drawable="@drawable/scrubber_control_pressed_holo" /> &lt;!&ndash; focused &ndash;&gt;-->
+    <!--<item android:state_enabled="true" android:drawable="@drawable/scrubber_control_normal_holo"/> &lt;!&ndash; idle state &ndash;&gt;-->
+    <item
+        android:state_enabled="true"
+        android:state_pressed="true">
+        <set>
+            <objectAnimator
+                android:duration="2000"
+                android:propertyName="scaleX"
+                android:startDelay="100"
+                android:valueTo="1.3"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="2000"
+                android:propertyName="scaleY"
+                android:startDelay="100"
+                android:valueTo="1.3"
+                android:valueType="floatType" />
+        </set>
+    </item>
+    <!--base state -->
+    <item android:state_enabled="true">
+        <set>
+            <objectAnimator
+                android:duration="2000"
+                android:propertyName="scaleX"
+                android:startDelay="100"
+                android:valueTo="1"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="2000"
+                android:propertyName="scaleY"
+                android:startDelay="100"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </set>
+    </item>
+    <item>
+        <set>
+            <objectAnimator
+                android:duration="2000"
+                android:propertyName="scaleX"
+                android:startDelay="100"
+                android:valueTo="1"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="2000"
+                android:propertyName="scaleY"
+                android:startDelay="100"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </set>
+    </item>
+</selector>
