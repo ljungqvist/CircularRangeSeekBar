@@ -20,7 +20,7 @@ import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
 
-internal class NonChangingBoundsRippleDrawable(color: ColorStateList?, content: Drawable?, mask: Drawable?)
+internal class NonChangingBoundsRippleDrawable(color: ColorStateList, content: Drawable?, mask: Drawable?)
     : RippleDrawable(color, content, mask) {
 
     internal fun setBoundsInternal(left: Int, top: Int, right: Int, bottom: Int) {
